@@ -1,0 +1,729 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CrazyMemeCrafter — Meme Generator</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0f0f11;
+      --surface: #1a1a1f;
+      --surface2: #22222a;
+      --border: rgba(255,255,255,0.08);
+      --accent: #f5c518;
+      --accent2: #ff6b35;
+      --text: #f0f0f0;
+      --muted: #888;
+      --radius: 12px;
+      --font-display: 'Bebas Neue', sans-serif;
+      --font-body: 'DM Sans', sans-serif;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font-body);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1.2rem 2rem;
+      border-bottom: 1px solid var(--border);
+      background: rgba(15,15,17,0.9);
+      backdrop-filter: blur(12px);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .logo {
+      font-family: var(--font-display);
+      font-size: 2rem;
+      letter-spacing: 2px;
+      color: var(--accent);
+    }
+
+    .logo span { color: var(--accent2); }
+
+    .header-badge {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 6px 14px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    main {
+      display: grid;
+      grid-template-columns: 340px 1fr;
+      gap: 0;
+      flex: 1;
+      min-height: 0;
+    }
+
+    /* --- SIDEBAR --- */
+    .sidebar {
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+      max-height: calc(100vh - 65px);
+    }
+
+    .sidebar-section {
+      padding: 1.25rem 1.5rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .sidebar-section h3 {
+      font-family: var(--font-display);
+      font-size: 1rem;
+      letter-spacing: 1.5px;
+      color: var(--muted);
+      margin-bottom: 1rem;
+    }
+
+    /* Drop zone */
+    #drop-zone {
+      border: 2px dashed rgba(245,197,24,0.3);
+      border-radius: var(--radius);
+      padding: 1.5rem;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    #drop-zone:hover, #drop-zone.drag-over {
+      border-color: var(--accent);
+      background: rgba(245,197,24,0.05);
+    }
+
+    #drop-zone .icon { font-size: 2rem; margin-bottom: 0.5rem; }
+    #drop-zone p { font-size: 13px; color: var(--muted); }
+    #drop-zone input { display: none; }
+
+    /* Templates */
+    .template-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+    }
+
+    .template-thumb {
+      aspect-ratio: 1;
+      border-radius: 8px;
+      overflow: hidden;
+      cursor: pointer;
+      border: 2px solid transparent;
+      transition: all 0.15s;
+      background: var(--surface2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      position: relative;
+    }
+
+    .template-thumb:hover { border-color: var(--accent); transform: scale(1.04); }
+    .template-thumb.active { border-color: var(--accent); }
+    .template-thumb img { width: 100%; height: 100%; object-fit: cover; }
+
+    /* Controls */
+    .control-group { margin-bottom: 1rem; }
+    .control-group:last-child { margin-bottom: 0; }
+
+    label {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+
+    label span { color: var(--accent); font-weight: 600; }
+
+    input[type="text"] {
+      width: 100%;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 12px;
+      color: var(--text);
+      font-family: var(--font-body);
+      font-size: 14px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    input[type="text"]:focus { border-color: var(--accent); }
+
+    input[type="range"] {
+      width: 100%;
+      accent-color: var(--accent);
+      cursor: pointer;
+    }
+
+    .color-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .color-pick {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    input[type="color"] {
+      width: 100%;
+      height: 38px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--surface2);
+      cursor: pointer;
+      padding: 3px;
+    }
+
+    select {
+      width: 100%;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 12px;
+      color: var(--text);
+      font-family: var(--font-body);
+      font-size: 14px;
+      outline: none;
+      cursor: pointer;
+    }
+
+    select:focus { border-color: var(--accent); }
+
+    /* Toggle buttons */
+    .btn-group {
+      display: flex;
+      gap: 6px;
+    }
+
+    .btn-toggle {
+      flex: 1;
+      padding: 8px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--muted);
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.15s;
+      font-family: var(--font-body);
+    }
+
+    .btn-toggle.active, .btn-toggle:hover {
+      background: var(--accent);
+      color: #000;
+      border-color: var(--accent);
+      font-weight: 600;
+    }
+
+    /* Download button */
+    #download-btn {
+      display: block;
+      width: calc(100% - 3rem);
+      margin: 1.25rem 1.5rem;
+      padding: 14px;
+      background: var(--accent);
+      color: #000;
+      border: none;
+      border-radius: var(--radius);
+      font-family: var(--font-display);
+      font-size: 1.2rem;
+      letter-spacing: 2px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    #download-btn:hover { background: #ffd740; transform: translateY(-1px); }
+    #download-btn:active { transform: translateY(0); }
+
+    /* --- CANVAS AREA --- */
+    .canvas-area {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+      background: repeating-conic-gradient(#1a1a1f 0% 25%, #0f0f11 0% 50%) 0 0 / 24px 24px;
+      min-height: calc(100vh - 65px);
+    }
+
+    .canvas-wrapper {
+      position: relative;
+      max-width: 100%;
+      box-shadow: 0 30px 80px rgba(0,0,0,0.6);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    #meme-canvas {
+      display: block;
+      max-width: min(600px, calc(100vw - 400px));
+      max-height: 70vh;
+      width: auto;
+      height: auto;
+    }
+
+    .empty-state {
+      text-align: center;
+      color: var(--muted);
+    }
+
+    .empty-state .big-emoji { font-size: 4rem; margin-bottom: 1rem; }
+    .empty-state h2 { font-family: var(--font-display); font-size: 2rem; letter-spacing: 2px; color: rgba(255,255,255,0.2); }
+
+    /* Sticker picker */
+    .sticker-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .sticker-btn {
+      width: 36px;
+      height: 36px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 1.3rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s;
+    }
+
+    .sticker-btn:hover { background: var(--accent); transform: scale(1.15); }
+
+    /* Toast */
+    #toast {
+      position: fixed;
+      bottom: 2rem;
+      right: 2rem;
+      background: var(--accent);
+      color: #000;
+      padding: 12px 20px;
+      border-radius: 999px;
+      font-weight: 600;
+      font-size: 14px;
+      opacity: 0;
+      transform: translateY(10px);
+      transition: all 0.3s;
+      pointer-events: none;
+      z-index: 999;
+    }
+
+    #toast.show { opacity: 1; transform: translateY(0); }
+
+    @media (max-width: 700px) {
+      main { grid-template-columns: 1fr; }
+      .sidebar { max-height: none; }
+      .canvas-area { min-height: 50vh; padding: 1rem; }
+      #meme-canvas { max-width: 100%; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo">CrazyMeme<span>Crafter</span></div>
+  <div class="header-badge">Canvas API · Vanilla JS</div>
+</header>
+
+<main>
+  <aside class="sidebar">
+
+    <!-- Upload -->
+    <div class="sidebar-section">
+      <h3>IMAGE</h3>
+      <div id="drop-zone" onclick="document.getElementById('file-input').click()">
+        <div class="icon">🖼️</div>
+        <p>Click or drag & drop an image</p>
+        <input type="file" id="file-input" accept="image/*">
+      </div>
+    </div>
+
+    <!-- Templates -->
+    <div class="sidebar-section">
+      <h3>TEMPLATES</h3>
+      <div class="template-grid">
+        <div class="template-thumb" onclick="loadTemplate('drake')" title="Drake">🧑‍🎤</div>
+        <div class="template-thumb" onclick="loadTemplate('distracted')" title="Distracted BF">👀</div>
+        <div class="template-thumb" onclick="loadTemplate('brain')" title="Expanding Brain">🧠</div>
+        <div class="template-thumb" onclick="loadTemplate('change')" title="Change my Mind">🪑</div>
+        <div class="template-thumb" onclick="loadTemplate('fine')" title="This is Fine">🔥</div>
+        <div class="template-thumb" onclick="loadTemplate('button')" title="Two Buttons">🔴</div>
+      </div>
+    </div>
+
+    <!-- Text controls -->
+    <div class="sidebar-section">
+      <h3>TEXT</h3>
+      <div class="control-group">
+        <label>Top Text</label>
+        <input type="text" id="top-text" placeholder="TOP TEXT" oninput="drawMeme()">
+      </div>
+      <div class="control-group">
+        <label>Bottom Text</label>
+        <input type="text" id="bottom-text" placeholder="BOTTOM TEXT" oninput="drawMeme()">
+      </div>
+      <div class="control-group">
+        <label>Font Size <span id="size-val">48</span>px</label>
+        <input type="range" id="font-size" min="16" max="100" value="48" step="1" oninput="document.getElementById('size-val').textContent=this.value; drawMeme()">
+      </div>
+      <div class="control-group">
+        <label>Font Style</label>
+        <select id="font-style" onchange="drawMeme()">
+          <option value="Impact, Arial Black">Impact (Classic)</option>
+          <option value="'Bebas Neue', sans-serif">Bebas Neue</option>
+          <option value="Georgia, serif">Georgia</option>
+          <option value="'Comic Sans MS', cursive">Comic Sans 😂</option>
+          <option value="monospace">Monospace</option>
+        </select>
+      </div>
+      <div class="control-group">
+        <label>Text Align</label>
+        <div class="btn-group">
+          <button class="btn-toggle active" onclick="setAlign('left', this)">Left</button>
+          <button class="btn-toggle" onclick="setAlign('center', this)">Center</button>
+          <button class="btn-toggle" onclick="setAlign('right', this)">Right</button>
+        </div>
+      </div>
+      <div class="color-row">
+        <div class="color-pick">
+          <label>Fill</label>
+          <input type="color" id="text-color" value="#ffffff" oninput="drawMeme()">
+        </div>
+        <div class="color-pick">
+          <label>Outline</label>
+          <input type="color" id="stroke-color" value="#000000" oninput="drawMeme()">
+        </div>
+      </div>
+    </div>
+
+    <!-- Stickers -->
+    <div class="sidebar-section">
+      <h3>STICKERS</h3>
+      <div class="sticker-grid">
+        <button class="sticker-btn" onclick="addSticker('🔥')">🔥</button>
+        <button class="sticker-btn" onclick="addSticker('💀')">💀</button>
+        <button class="sticker-btn" onclick="addSticker('😂')">😂</button>
+        <button class="sticker-btn" onclick="addSticker('👀')">👀</button>
+        <button class="sticker-btn" onclick="addSticker('💯')">💯</button>
+        <button class="sticker-btn" onclick="addSticker('🤣')">🤣</button>
+        <button class="sticker-btn" onclick="addSticker('😭')">😭</button>
+        <button class="sticker-btn" onclick="addSticker('✨')">✨</button>
+        <button class="sticker-btn" onclick="addSticker('🎉')">🎉</button>
+        <button class="sticker-btn" onclick="addSticker('⚡')">⚡</button>
+        <button class="sticker-btn" onclick="addSticker('🤯')">🤯</button>
+        <button class="sticker-btn" onclick="addSticker('🏆')">🏆</button>
+      </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="sidebar-section">
+      <h3>FILTER</h3>
+      <div class="btn-group" style="flex-wrap:wrap; gap:6px;">
+        <button class="btn-toggle active" onclick="setFilter('none', this)">None</button>
+        <button class="btn-toggle" onclick="setFilter('grayscale(100%)', this)">B&W</button>
+        <button class="btn-toggle" onclick="setFilter('sepia(80%)', this)">Sepia</button>
+        <button class="btn-toggle" onclick="setFilter('hue-rotate(180deg)', this)">Invert HUE</button>
+        <button class="btn-toggle" onclick="setFilter('contrast(150%) saturate(150%)', this)">Vivid</button>
+      </div>
+    </div>
+
+  </aside>
+
+  <section class="canvas-area">
+    <div class="empty-state" id="empty-state">
+      <div class="big-emoji">🎭</div>
+      <h2>UPLOAD AN IMAGE TO START</h2>
+    </div>
+    <div class="canvas-wrapper" id="canvas-wrapper" style="display:none; position:relative;">
+      <canvas id="meme-canvas" style="display:block;"></canvas>
+      <div id="text-overlay" style="position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none;"></div>
+    </div>
+    <p id="drag-hint" style="display:none; margin-top:10px; font-size:12px; color:#888; text-align:center;">✋ Drag the text labels to reposition them anywhere</p>
+  </section>
+</main>
+
+<button id="download-btn" onclick="downloadMeme()" style="display:none;">⬇ DOWNLOAD MEME</button>
+<div id="toast">✓ Meme downloaded!</div>
+
+<style>
+  .drag-label {
+    position: absolute;
+    cursor: grab;
+    user-select: none;
+    pointer-events: all;
+    padding: 4px 6px;
+    border: 1.5px dashed transparent;
+    border-radius: 4px;
+    line-height: 1;
+    white-space: nowrap;
+    transform: translate(-50%, -50%);
+    transition: border-color 0.15s;
+    color: transparent !important;
+    -webkit-text-stroke: 0 !important;
+  }
+  .drag-label:hover { border-color: rgba(245,197,24,0.8); }
+  .drag-label.dragging { cursor: grabbing; border-color: #f5c518; background: rgba(245,197,24,0.08); }
+</style>
+
+<script>
+  let img = null;
+  let stickers = [];
+  let currentFilter = 'none';
+  let topPos = { x: 0.5, y: 0.08 };
+  let bottomPos = { x: 0.5, y: 0.92 };
+
+  const canvas = document.getElementById('meme-canvas');
+  const ctx = canvas.getContext('2d');
+  const overlay = document.getElementById('text-overlay');
+
+  document.getElementById('file-input').addEventListener('change', e => {
+    if (e.target.files[0]) loadImageFile(e.target.files[0]);
+  });
+
+  const dz = document.getElementById('drop-zone');
+  dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('drag-over'); });
+  dz.addEventListener('dragleave', () => dz.classList.remove('drag-over'));
+  dz.addEventListener('drop', e => {
+    e.preventDefault();
+    dz.classList.remove('drag-over');
+    const f = e.dataTransfer.files[0];
+    if (f && f.type.startsWith('image/')) loadImageFile(f);
+  });
+
+  function loadImageFile(file) {
+    const reader = new FileReader();
+    reader.onload = ev => loadSrc(ev.target.result);
+    reader.readAsDataURL(file);
+  }
+
+  function loadTemplate(name) {
+    const templates = {
+      drake: 'https://i.imgflip.com/30b1gx.jpg',
+      distracted: 'https://i.imgflip.com/1ur9b0.jpg',
+      brain: 'https://i.imgflip.com/1jwhww.jpg',
+      change: 'https://i.imgflip.com/24y43o.jpg',
+      fine: 'https://i.imgflip.com/wxica.jpg',
+      button: 'https://i.imgflip.com/1g8my4.jpg'
+    };
+    loadSrc(templates[name]);
+  }
+
+  function loadSrc(src) {
+    img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      stickers = [];
+      topPos = { x: 0.5, y: 0.08 };
+      bottomPos = { x: 0.5, y: 0.92 };
+      document.getElementById('empty-state').style.display = 'none';
+      document.getElementById('canvas-wrapper').style.display = 'block';
+      document.getElementById('download-btn').style.display = 'block';
+      document.getElementById('drag-hint').style.display = 'block';
+      drawMeme();
+    };
+    img.onerror = () => alert('Could not load image. Try uploading a file instead.');
+    img.src = src;
+  }
+
+  function getFontInfo() {
+    return {
+      fontSize: parseInt(document.getElementById('font-size').value),
+      font: document.getElementById('font-style').value,
+      fillColor: document.getElementById('text-color').value,
+      strokeColor: document.getElementById('stroke-color').value
+    };
+  }
+
+  function drawMeme() {
+    if (!img) return;
+    const MAX = 700;
+    const scale = Math.min(MAX / img.width, MAX / img.height, 1);
+    canvas.width = Math.round(img.width * scale);
+    canvas.height = Math.round(img.height * scale);
+
+    ctx.filter = currentFilter === 'none' ? 'none' : currentFilter;
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+    ctx.filter = 'none';
+
+    const { fontSize, font, fillColor, strokeColor } = getFontInfo();
+    const topText = document.getElementById('top-text').value.toUpperCase();
+    const bottomText = document.getElementById('bottom-text').value.toUpperCase();
+
+    ctx.font = `900 ${fontSize}px ${font}`;
+    ctx.textAlign = 'center';
+    ctx.lineWidth = Math.max(2, Math.round(fontSize / 7));
+    ctx.lineJoin = 'round';
+
+    function drawText(text, pos) {
+      const x = pos.x * canvas.width;
+      const y = pos.y * canvas.height;
+      ctx.strokeStyle = strokeColor;
+      ctx.fillStyle = fillColor;
+      ctx.strokeText(text, x, y);
+      ctx.fillText(text, x, y);
+    }
+
+    if (topText) drawText(topText, topPos);
+    if (bottomText) drawText(bottomText, bottomPos);
+
+    stickers.forEach(s => {
+      ctx.font = `${s.size}px serif`;
+      ctx.textAlign = 'center';
+      ctx.fillText(s.emoji, s.x, s.y);
+    });
+
+    buildOverlay();
+  }
+
+  function buildOverlay() {
+    overlay.innerHTML = '';
+    const { fontSize, font, fillColor, strokeColor } = getFontInfo();
+    const topText = document.getElementById('top-text').value.toUpperCase();
+    const bottomText = document.getElementById('bottom-text').value.toUpperCase();
+    const cw = canvas.offsetWidth || canvas.width;
+    const scaleX = cw / canvas.width;
+    const scaledFont = Math.round(fontSize * scaleX);
+
+    function makeLabel(text, pos, posKey) {
+      if (!text) return;
+      const el = document.createElement('div');
+      el.className = 'drag-label';
+      el.textContent = text;
+      el.style.cssText = `font-size:${scaledFont}px; font-family:${font}; font-weight:900; color:${fillColor}; -webkit-text-stroke:${Math.max(1, Math.round(scaledFont/14))}px ${strokeColor}; left:${pos.x * 100}%; top:${pos.y * 100}%;`;
+      makeDraggable(el, posKey);
+      overlay.appendChild(el);
+    }
+
+    makeLabel(topText, topPos, 'top');
+    makeLabel(bottomText, bottomPos, 'bottom');
+  }
+
+  function makeDraggable(el, posKey) {
+    let startX, startY, startLeft, startTop;
+
+    el.addEventListener('mousedown', e => {
+      e.preventDefault();
+      el.classList.add('dragging');
+      startX = e.clientX; startY = e.clientY;
+      const wRect = overlay.getBoundingClientRect();
+      const rRect = el.getBoundingClientRect();
+      startLeft = rRect.left + rRect.width / 2 - wRect.left;
+      startTop = rRect.top + rRect.height / 2 - wRect.top;
+
+      function onMove(e) {
+        const wRect = overlay.getBoundingClientRect();
+        const nx = Math.min(1, Math.max(0, (startLeft + e.clientX - startX) / wRect.width));
+        const ny = Math.min(1, Math.max(0, (startTop + e.clientY - startY) / wRect.height));
+        if (posKey === 'top') { topPos.x = nx; topPos.y = ny; }
+        else { bottomPos.x = nx; bottomPos.y = ny; }
+        el.style.left = (nx * 100) + '%';
+        el.style.top = (ny * 100) + '%';
+      }
+
+      function onUp() {
+        el.classList.remove('dragging');
+        drawMeme();
+        document.removeEventListener('mousemove', onMove);
+        document.removeEventListener('mouseup', onUp);
+      }
+
+      document.addEventListener('mousemove', onMove);
+      document.addEventListener('mouseup', onUp);
+    });
+
+    el.addEventListener('touchstart', e => {
+      e.preventDefault();
+      const t = e.touches[0];
+      startX = t.clientX; startY = t.clientY;
+      const wRect = overlay.getBoundingClientRect();
+      const rRect = el.getBoundingClientRect();
+      startLeft = rRect.left + rRect.width / 2 - wRect.left;
+      startTop = rRect.top + rRect.height / 2 - wRect.top;
+
+      function onMove(e) {
+        const t = e.touches[0];
+        const wRect = overlay.getBoundingClientRect();
+        const nx = Math.min(1, Math.max(0, (startLeft + t.clientX - startX) / wRect.width));
+        const ny = Math.min(1, Math.max(0, (startTop + t.clientY - startY) / wRect.height));
+        if (posKey === 'top') { topPos.x = nx; topPos.y = ny; }
+        else { bottomPos.x = nx; bottomPos.y = ny; }
+        el.style.left = (nx * 100) + '%';
+        el.style.top = (ny * 100) + '%';
+      }
+
+      function onEnd() {
+        drawMeme();
+        el.removeEventListener('touchmove', onMove);
+        el.removeEventListener('touchend', onEnd);
+      }
+
+      el.addEventListener('touchmove', onMove, { passive: false });
+      el.addEventListener('touchend', onEnd);
+    }, { passive: false });
+  }
+
+  function setAlign(align, btn) {
+    btn.closest('.btn-group').querySelectorAll('.btn-toggle').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    drawMeme();
+  }
+
+  function setFilter(filter, btn) {
+    currentFilter = filter;
+    btn.closest('.btn-group').querySelectorAll('.btn-toggle').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    drawMeme();
+  }
+
+  function addSticker(emoji) {
+    if (!img) return;
+    stickers.push({
+      emoji,
+      x: canvas.width * (0.2 + Math.random() * 0.6),
+      y: canvas.height * (0.2 + Math.random() * 0.6),
+      size: Math.round(canvas.width * 0.1)
+    });
+    drawMeme();
+  }
+
+  function downloadMeme() {
+    overlay.style.display = 'none';
+    drawMeme();
+    const link = document.createElement('a');
+    link.download = 'crazymemecrafter.png';
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+    overlay.style.display = 'block';
+    const toast = document.getElementById('toast');
+    toast.classList.add('show');
+    setTimeout(() => toast.classList.remove('show'), 2500);
+  }
+</script>
+
+</body>
+</html>
